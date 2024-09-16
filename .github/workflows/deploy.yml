@@ -24,8 +24,8 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/your-app-name:latest .
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/your-app-name:latest
+          docker-compose build
+          docker-compose push
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -35,6 +35,5 @@ jobs:
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             # Update Docker image on EC2
-            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/your-app-name:latest
-            docker stop $(docker ps -q --filter ancestor=${{ secrets.DOCKER_HUB_USERNAME }}/your-app-name:latest) || true
-            docker run -d -p 80:80 --name your-app-container ${{ secrets.DOCKER_HUB_USERNAME }}/your-app-name:latest
+            docker-compose pull
+            docker-compose up -d
