@@ -1,6 +1,8 @@
 # install build-essential if you cannot run make commands
 # example use: 
 # make up
+cd:
+	cd /mnt/c/xampp/htdocs/CRUD-baral/
 
 env:
 	cp .env.example .env
@@ -8,6 +10,9 @@ env:
 up:
 	./vendor/bin/sail up -d
 
+rebuild:
+	./vendor/bin/sail up --build -d
+	
 recache:
 	./vendor/bin/sail artisan config:cache
 
