@@ -27,10 +27,6 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Set environment variables (default values can be overridden)
-ENV WWWUSER=${WWWUSER:-www-data}
-ENV WWWGROUP=${WWWGROUP:-www-data}
-
 # Expose port 80
 EXPOSE 80
 
