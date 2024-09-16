@@ -9,13 +9,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    env:
-      WWWGROUP: ${{ secrets.WWWGROUP }}
-      WWWUSER: ${{ secrets.WWWUSER }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_DATABASE: ${{ secrets.DB_DATABASE }}
-      DB_USERNAME: ${{ secrets.DB_USERNAME }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -39,9 +32,6 @@ jobs:
           docker-compose build
           docker-compose push
 
-      - name: Check Docker Compose version
-        run: docker-compose --version
-
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.2.0
         with:
@@ -50,5 +40,6 @@ jobs:
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             # Update Docker image on EC2
+            cd /path/to/your/app
             docker-compose pull
             docker-compose up -d
