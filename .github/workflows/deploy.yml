@@ -32,7 +32,8 @@ jobs:
       # Generate APP_KEY for Laravel (Ensure volumes and paths are set correctly)
       - name: Generate APP_KEY
         run: |
-          docker run --rm -v $(pwd):/var/www/html -w /var/www/html johnnote/sail-8.1:latest ./vendor/bin/sail php artisan key:generate
+          docker run --rm -v $(pwd):/var/www/html -w /var/www/html johnnote/sail-8.1:latest php artisan key:generate
+
 
       # Deploy the application to EC2 using SSH
       - name: Deploy to EC2
