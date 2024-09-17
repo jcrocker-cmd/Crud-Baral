@@ -41,10 +41,7 @@ jobs:
             cd /home/ec2-user/sail-8.1
             docker-compose down
             docker-compose up -d
-            # Install Composer dependencies
             docker-compose exec -T app composer install --no-dev --prefer-dist
-            # Generate APP_KEY
             docker-compose exec -T app php artisan key:generate
-            # Run migrations and cache config
             docker-compose exec -T app php artisan migrate
             docker-compose exec -T app php artisan config:cache
