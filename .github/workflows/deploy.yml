@@ -28,79 +28,27 @@ jobs:
       - name: Build and Push Docker image
         run: |
           docker buildx build --platform linux/amd64 --tag johnnote/sail-8.1:latest --push .
-
       # Deploy the application to EC2 using SSH
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: 3.27.181.96  # Replace with your EC2 Public IP
-          username: ec2-user # Use the correct username for your instance
-          key: |
-            -----BEGIN RSA PRIVATE KEY-----
-            MIIEpAIBAAKCAQEAkgGCGveVTAimVY4l1cU2liFdlDo4HhALK7PA5KwrmXg7fMAr
-            8GUy8gNdnNkdyKGvY/38wcob4yon3/aTJh4maHHHfG+vbyfIAa+IfDjP441QpOud
-            ZpYa7TieIvKdMOUlil/ZDfoAePbIGJK34a+sCZmeQS2i3UNIciJoBSwWiG4zNBvr
-            0PzCljEVouopRQz/x5/28dQxs3LyrBawaiWlHLAi6aqBByXZtcoRyeEW/KRELHqU
-            q7MKiiuIkYpixZLUhcBTVgfNHQCtF00KKJ4+9tfyLjb3Q2baCBLfRDPQmkiGylRG
-            cBNEAuBDSHp6tUPCHBnHxqB966nLWS7wLKMlbwIDAQABAoIBAQCPypp2soQ/aHlf
-            4umSGXKD8oI1vAyOVuCZfqMm0gTyVP3JA32CeDfvLq9gDFePwuR3xqjJtaE3XMn+
-            gNk0fhb3X67F9zxAbV5FgrkZFd5vTTox4bWXVZdZLxxWcLesctBA8dpTMHaMqwYv
-            ZTdhNeBpZ/f6WtZ9sIjFlur4xQ2/98KvZ47BNB2JwqXwWPguRpDOk+dLAuIxVYI+
-            diAmO4fYa2Eix8AaiI7P2r6w2uK4X8saLpKqYQlsHBZ+djFhzcHM/tJtgTzbdqeO
-            Yh7VeRVi+EupRtgyB+Ktr+9hXViFFcONj2U0WEuyUxYoaLLehtS7MCPOsa9MYbKM
-            davq0N1ZAoGBAMkBm4QJ4cKUVrqzAJ8N5jo3a6FrZBQpd1pLyEFSUQ+bXL9US5LG
-            BhWgmRPc6uxY2BCZNgT9dEzHnHyLLbGOU1T6zfMgF5r5d6rwlfGJ6d0/TfS+rAfu
-            14FDYoeRFAuMH3/O8ys1TKwCsAKr+3XhiQZMQT+ZxVKWf4N9BGV5RliTAoGBALnz
-            so0hOrZF+GO9Dl2HkvozPABlUHSHMA1FxB32x7R4fOH6fEIhLzaoM6zJoo/Ezrro
-            O3SC5+46anN4EAoKzPOfdVCwZ5DNBOi7EuN05UqStnZO0oJ9gRW9HVl1ppgkhHcF
-            pf2pV/niP1SdmG0Z+YIMxf5FGbf2l3Fb+xpP7lU1AoGAQB69J0+nrtR3HjN/3T0n
-            1iZbtTB2yl+37RwDk6LYrOvYmEghm36D7l4+trFgV2i39AOL0eewM9XxO2GCgANw
-            3cjr7cStAwjVfbglfNmLusI48fvpENbF9Dw0sB49kLlwSusPcxcbkDuDPjbyjlYV
-            yeaFYe6BnajYoG8++cfIAvUCgYBV0N60/QHgfrgcJ3LKvTeaWiy1rgwMSxtk9K6G
-            eY4+fmB71aKkzjXAzq1Sb5ejK9uQLH7LzWIF8lWQRnd4evWM9Skp/M8+5y79zN/x
-            ss/is4SbYtMJv6vkAWvbDk285xVu7F9nilB8lOpPPY/LwfIBD64MI42z9Yx8l0ty
-            IDNIhQKBgQCGFrLum7Arp4/fRyfKjoO+BCK9WRCltl7yxx+UcEedX6JmTKAZjtzc
-            rUr+0zl3iKItw/WXK1T9XS1VKlL2NiyDVPVuV1sWuy/O/2CjrjrVz1E3UL6hP4gW
-            84dHJyUmDVhL5h+KONejtr7EU2/hUx8/e4GkDys/9ZLrW+hq01JxRw==
-            -----END RSA PRIVATE KEY-----
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ${{ secrets.EC2_SSH_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             echo "Pulling Docker image..."
             docker pull johnnote/sail-8.1:latest
-
-            echo "Checking if the application directory exists..."
-            if [ ! -d "/home/ec2-user/sail-8.1" ]; then
-              echo "Directory /home/ec2-user/sail-8.1 does not exist. Creating..."
-              mkdir -p /home/ec2-user/sail-8.1
-            else
-              echo "Directory /home/ec2-user/sail-8.1 exists."
-            fi
-
-            echo "Installing Docker Compose..."
-            if ! [ -x "$(command -v docker-compose)" ]; then
-              echo "Docker Compose not installed. Installing now..."
-              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-              sudo chmod +x /usr/local/bin/docker-compose
-            else
-              echo "Docker Compose is already installed."
-            fi
-
             echo "Navigating to application directory..."
             cd /home/ec2-user/sail-8.1
-
             echo "Stopping existing containers..."
             docker-compose down
-
             echo "Starting new containers..."
             docker-compose up -d
-
             echo "Installing Composer dependencies..."
             docker-compose exec -T app composer install --no-dev --prefer-dist
-
             echo "Generating application key..."
             docker-compose exec -T app php artisan key:generate
-
             echo "Running migrations..."
             docker-compose exec -T app php artisan migrate
-
             echo "Caching configuration..."
             docker-compose exec -T app php artisan config:cache
