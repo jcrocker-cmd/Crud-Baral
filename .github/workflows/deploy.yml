@@ -29,12 +29,6 @@ jobs:
         run: |
           docker buildx build --platform linux/amd64 --tag johnnote/sail-8.1:latest --push .
 
-      # Generate APP_KEY for Laravel (Ensure volumes and paths are set correctly)
-      - name: Generate APP_KEY
-        run: |
-          docker run --rm -v $(pwd):/var/www/html -w /var/www/html johnnote/sail-8.1:latest php artisan key:generate
-
-
       # Deploy the application to EC2 using SSH
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -47,5 +41,10 @@ jobs:
             cd /home/ec2-user/sail-8.1
             docker-compose down
             docker-compose up -d
-            ./vendor/bin/sail php artisan migrate
-            ./vendor/bin/sail php artisan config:cache
+            # Install Composer dependencies
+            docker-compose exec -T app composer install --no-dev --prefer-dist
+            # Generate APP_KEY
+            docker-compose exec -T app php artisan key:generate
+            # Run migrations and cache config
+            docker-compose exec -T app php artisan migrate
+            docker-compose exec -T app php artisan config:cache
