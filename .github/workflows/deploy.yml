@@ -1,4 +1,4 @@
-name: Deploy Laravel Sail Application
+name: Deploy Laravel Application
 
 on:
   push:
