@@ -20,6 +20,10 @@ jobs:
           username: ${{ secrets.EC2_SSH_USERNAME }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
+            # Navigate to a working directory and ensure it's set up
+            mkdir -p /home/ec2-user/sail-8.1
+            cd /home/ec2-user/sail-8.1
+            
             # Clone your repository if needed
             git clone https://github.com/jcrocker-cmd/Crud-Baral.git .
             
