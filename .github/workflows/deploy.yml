@@ -53,8 +53,8 @@ jobs:
 
             docker-compose down
             docker pull johnnote/sail-8.1:latest
-            docker-compose up -d
             docker-compose exec app composer install --no-dev --prefer-dist
+            docker-compose up -d
             docker-compose exec app php artisan key:generate
             docker-compose exec app php artisan migrate
             docker-compose exec app php artisan config:cache
