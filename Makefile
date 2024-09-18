@@ -2,7 +2,7 @@
 # example use: 
 # make up
 cd:
-	cd /mnt/c/xampp/htdocs/CRUD-baral/
+	cd '/mnt/c/xampp/htdocs/CRUD-baral/' & pwd'
 
 env:
 	cp .env.example .env
