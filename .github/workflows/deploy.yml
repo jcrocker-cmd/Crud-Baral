@@ -20,11 +20,21 @@ jobs:
           username: ${{ secrets.EC2_SSH_USERNAME }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
-            docker pull johnnote/sail-8.1:latest
-            cd /home/ec2-user/sail-8.1
+            # Clone your repository if needed
+            git clone https://github.com/jcrocker-cmd/Crud-Baral.git .
+            
+            # Build the Docker image
             docker build -t sail-8.1:latest .
+
+            # If Docker Compose is not installed, install it
+            sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            sudo chmod +x /usr/local/bin/docker-compose
+
+            # Use Docker Compose to manage the containers
             docker-compose down
             docker-compose up -d
+
+            # Run the necessary Laravel commands
             docker-compose exec -T app composer install --no-dev --prefer-dist
             docker-compose exec -T app php artisan key:generate
             docker-compose exec -T app php artisan migrate
