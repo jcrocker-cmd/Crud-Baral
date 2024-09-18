@@ -44,9 +44,8 @@ jobs:
           script: |
             docker pull johnnote/sail-8.1:latest
             cd /home/ec2-user/sail-8.1
-            docker-compose down
-            docker-compose up -d
-            docker-compose exec -T app composer install --no-dev --prefer-dist
-            docker-compose exec -T app php artisan key:generate
-            docker-compose exec -T app php artisan migrate
-            docker-compose exec -T app php artisan config:cache
+            docker compose --env-file .env.example up -d
+            docker compose exec -T app composer install --no-dev --prefer-dist
+            docker compose exec -T app php artisan key:generate
+            docker compose exec -T app php artisan migrate
+            docker compose exec -T app php artisan config:cache
