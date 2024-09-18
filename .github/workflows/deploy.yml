@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+
 jobs:
   build-and-deploy:
     runs-on: self-hosted
@@ -12,21 +13,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Log in to Docker Hub before building or pushing
+      # Log in to Docker Hub before pulling or pushing images
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      # Set up Docker Buildx for multi-platform builds
+      # Set up Docker Buildx (optional, in case you want to push updates to your Docker image)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # Build and push the Docker image in a single step
-      - name: Build and Push Docker image
-        run: |
-          docker buildx build --platform linux/amd64 --tag johnnote/sail-8.1:latest --push .
+      # Build and push the Docker image if necessary (optional)
+      # Uncomment if you want to push image updates
+      # - name: Build and Push Docker image
+      #   run: |
+      #     docker buildx build --platform linux/amd64 --tag johnnote/sail-8.1:latest --push .
+
       # Deploy the application to EC2 using SSH
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
@@ -36,18 +39,10 @@ jobs:
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             cd /home/ec2-user/sail-8.1
-
-            # Export environment variables before running Docker Compose
-            export WWWUSER=www-data
-            export WWWGROUP=www-data
-            export DB_DATABASE=exam
-            export DB_USERNAME=sail
-            export DB_PASSWORD=password
-
             docker-compose down
-            docker pull johnnote/sail-8.1:latest
-            docker-compose exec app composer install --no-dev --prefer-dist
+            docker pull johnnote/sail-8.1:latest  # Pull the pre-built image from Docker Hub
             docker-compose up -d
+            docker-compose exec app composer install --no-dev --prefer-dist
             docker-compose exec app php artisan key:generate
-            docker-compose exec app php artisan migrate
+            docker-compose exec app php artisan migrate --force
             docker-compose exec app php artisan config:cache
