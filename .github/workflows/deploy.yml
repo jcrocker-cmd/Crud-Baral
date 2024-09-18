@@ -22,6 +22,7 @@ jobs:
           script: |
             docker pull johnnote/sail-8.1:latest
             cd /home/ec2-user/sail-8.1
+            docker build -t sail-8.1:latest .
             docker-compose down
             docker-compose up -d
             docker-compose exec -T app composer install --no-dev --prefer-dist
