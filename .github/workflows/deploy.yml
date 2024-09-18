@@ -39,10 +39,16 @@ jobs:
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             cd /home/ec2-user/sail-8.1
+            # Export environment variables before running Docker Compose
+            export WWWUSER=www-data
+            export WWWGROUP=www-data
+            export DB_DATABASE=exam
+            export DB_USERNAME=sail
+            export DB_PASSWORD=password
             docker-compose down
-            docker pull johnnote/sail-8.1:latest  # Pull the pre-built image from Docker Hub
-            docker-compose up -d
+            docker pull johnnote/sail-8.1:latest
             docker-compose exec app composer install --no-dev --prefer-dist
+            docker-compose up -d
             docker-compose exec app php artisan key:generate
-            docker-compose exec app php artisan migrate --force
+            docker-compose exec app php artisan migrate
             docker-compose exec app php artisan config:cache
