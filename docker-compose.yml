@@ -30,6 +30,8 @@ services:
             - sail
         depends_on:
             - mysql
+        env_file:
+            - .env
     mysql:
         image: 'mysql/mysql-server:8.0'
         ports:
