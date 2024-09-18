@@ -20,19 +20,18 @@ jobs:
           username: ${{ secrets.EC2_SSH_USERNAME }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
-            # Navigate to a working directory and ensure it's set up
-            mkdir -p /home/ec2-user/sail-8.1
-            cd /home/ec2-user/sail-8.1
-            
-            # Clone your repository if needed
-            git clone https://github.com/jcrocker-cmd/Crud-Baral.git .
-            
-            # Build the Docker image
-            docker build -t sail-8.1:latest .
-
-            # If Docker Compose is not installed, install it
+            # Install required dependencies
+            sudo yum install -y git libcrypt python3-pip python3
             sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
             sudo chmod +x /usr/local/bin/docker-compose
+
+            # Create directory and clone repo
+            mkdir -p /home/ec2-user/sail-8.1
+            cd /home/ec2-user/sail-8.1
+            git clone https://github.com/your-repo/your-laravel-app.git .
+
+            # Build the Docker image
+            docker build -t sail-8.1:latest .
 
             # Use Docker Compose to manage the containers
             docker-compose down
