@@ -1,13 +1,7 @@
 version: '3'
 services:
     laravel.test:
-        build:
-            context: ./vendor/laravel/sail/runtimes/8.1
-            dockerfile: Dockerfile
-            args:
-                WWWGROUP: '${WWWGROUP:-www-data}'
-                WWWUSER: '${WWWUSER:-www-data}
-        image: sail-8.1/app
+        image: johnnote/sail-8.1:latest  # Pre-built Docker image
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         ports:
