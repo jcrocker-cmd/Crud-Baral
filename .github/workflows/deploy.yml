@@ -1,126 +1,35 @@
-name: Deploy Laravel
+name: Laravel
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
-  build-and-deploy:
-    runs-on: self-hosted
+  laravel-tests:
+
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      # Log in to Docker Hub before pulling or pushing images
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-      # Set up Docker Buildx (optional, in case you want to push updates to your Docker image)
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      # Build and push the Docker image if necessary (optional)
-      # Uncomment if you want to push image updates
-      # - name: Build and Push Docker image
-      #   run: |
-      #     docker buildx build --platform linux/amd64 --tag johnnote/sail-8.1:latest --push .
-
-      # Deploy the application to EC2 using SSH
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_PUBLIC_IP }}
-          username: ${{ secrets.EC2_SSH_USERNAME }}
-          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          script: |
-            # Step 1: Create the 'sail-8.1' directory if it doesn't exist
-            if [ ! -d "/home/ec2-user/sail-8.1" ]; then
-              mkdir -p /home/ec2-user/sail-8.1
-            fi
-
-            # Step 2: Install Docker Compose if not installed
-            if ! [ -x "$(command -v docker-compose)" ]; then
-              sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-              sudo chmod +x /usr/local/bin/docker-compose
-            fi
-
-            # Step 3: Navigate to the 'sail-8.1' directory
-            cd /home/ec2-user/sail-8.1
-
-            # Step 4: Pull the Docker image from Docker Hub
-            docker pull johnnote/sail-8.1:latest
-
-            # Step 5: Create or update the 'docker-compose.yml' file
-            echo "
-            version: '3'
-            services:
-                laravel.test:
-                    image: johnnote/sail-8.1:latest
-                    extra_hosts:
-                        - 'host.docker.internal:host-gateway'
-                    ports:
-                        - '${APP_PORT:-80}:80'
-                        - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
-                    environment:
-                        WWWUSER: '${WWWUSER}'
-                        LARAVEL_SAIL: 1
-                        XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
-                        XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
-                        DB_CONNECTION: mysql
-                        DB_HOST: mysql
-                        DB_PORT: 3306
-                        DB_DATABASE: '${DB_DATABASE}'
-                        DB_USERNAME: '${DB_USERNAME}'
-                        DB_PASSWORD: '${DB_PASSWORD}'
-                    volumes:
-                        - '.:/var/www/html'
-                    networks:
-                        - sail
-                    depends_on:
-                        - mysql
-                    env_file:
-                        - .env
-                mysql:
-                    image: 'mysql/mysql-server:8.0'
-                    ports:
-                        - '${FORWARD_DB_PORT:-3306}:3306'
-                    environment:
-                        MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
-                        MYSQL_ROOT_HOST: '%'
-                        MYSQL_DATABASE: '${DB_DATABASE}'
-                        MYSQL_USER: '${DB_USERNAME}'
-                        MYSQL_PASSWORD: '${DB_PASSWORD}'
-                        MYSQL_ALLOW_EMPTY_PASSWORD: 1
-                    volumes:
-                        - 'sail-mysql:/var/lib/mysql'
-                    networks:
-                        - sail
-            networks:
-                sail:
-                    driver: bridge
-            volumes:
-                sail-mysql:
-                    driver: local
-            " > docker-compose.yml
-
-            # Step 6: Create the '.env' file if it doesn't exist
-            echo "
-            WWWUSER=www-data
-            WWWGROUP=www-data
-            DB_DATABASE=your_db_name
-            DB_USERNAME=your_db_user
-            DB_PASSWORD=your_db_password
-            " > .env
-
-            # Step 7: Bring the Docker containers up
-            docker-compose up -d
-
-            # Optional: Run Laravel commands
-            docker-compose exec laravel.test php artisan key:generate
-            docker-compose exec laravel.test php artisan migrate
-            docker-compose exec laravel.test php artisan config:cache
+    - uses: shivammathur/setup-php@15c43e89cdef867065b0213be354c2841860869e
+      with:
+        php-version: '8.0'
+    - uses: actions/checkout@v4
+    - name: Copy .env
+      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+    - name: Install Dependencies
+      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+    - name: Generate key
+      run: php artisan key:generate
+    - name: Directory Permissions
+      run: chmod -R 777 storage bootstrap/cache
+    - name: Create Database
+      run: |
+        mkdir -p database
+        touch database/database.sqlite
+    - name: Execute tests (Unit and Feature tests) via PHPUnit/Pest
+      env:
+        DB_CONNECTION: sqlite
+        DB_DATABASE: database/database.sqlite
+      run: php artisan test
