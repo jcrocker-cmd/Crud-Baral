@@ -1,4 +1,4 @@
-name: Deploy Laravel Application
+name: Deploy Laravel
 
 on:
   push:
@@ -8,30 +8,27 @@ on:
 jobs:
   build-and-deploy:
     runs-on: self-hosted
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build Docker image
-        run: docker buildx build --platform linux/amd64 --tag johnnote/sail-8.1:latest --push .
-
+      # Log in to Docker Hub before building or pushing
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Push Docker image
-        run: docker push johnnote/sail-8.1:latest
+      # Set up Docker Buildx for multi-platform builds
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      - name: Generate APP_KEY
+      # Build and push the Docker image in a single step
+      - name: Build and Push Docker image
         run: |
-          docker run --rm -v $(pwd):/var/www/html -w /var/www/html johnnote/sail-8.1:latest ./vendor/bin/sail php artisan key:generate
-
+          docker buildx build --platform linux/amd64 --tag johnnote/sail-8.1:latest --push .
+      # Deploy the application to EC2 using SSH
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -41,7 +38,8 @@ jobs:
           script: |
             docker pull johnnote/sail-8.1:latest
             cd /home/ec2-user/sail-8.1
-            docker-compose down
             docker-compose up -d
-            ./vendor/bin/sail php artisan migrate
-            ./vendor/bin/sail php artisan config:cache
+            docker-compose exec app composer install --no-dev --prefer-dist
+            docker-compose exec app php artisan key:generate
+            docker-compose exec app php artisan migrate
+            docker-compose exec app php artisan config:cache
